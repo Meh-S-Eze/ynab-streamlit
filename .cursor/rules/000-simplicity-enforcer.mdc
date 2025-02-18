@@ -1,0 +1,56 @@
+---
+description: Prevent over-engineering and maintain garage project simplicity
+globs: "**/*.py, **/*.toml, **/*.env, **/*.txt"
+---
+
+name: simplicity_enforcer
+forbidden_patterns:
+  database:
+    pattern: "(sqlite|mongodb|redis|postgres)"
+    message: "No databases allowed - use simple text files"
+    
+  authentication:
+    pattern: "(oauth|jwt|session|cookie)"
+    message: "No auth complexity - use direct API token only"
+    
+  web_frameworks:
+    pattern: "(react|vue|angular|flask|django)"
+    message: "Use only Streamlit for UI, no web frameworks"
+    
+  infrastructure:
+    pattern: "(docker|kubernetes|terraform)"
+    message: "No containerization or infrastructure - keep it simple"
+    
+  caching:
+    pattern: "(cache|redis|memcached)"
+    message: "No caching systems - direct API calls only"
+
+required_patterns:
+  simplicity:
+    - pattern: "^import (os|re|requests|streamlit)"
+      message: "Stick to basic Python libraries"
+    
+  file_operations:
+    - pattern: "\\.(txt|env)$"
+      message: "Use only .txt and .env files"
+
+warnings:
+  complexity_hints:
+    - "TODO: Add caching"
+    - "TODO: Add database"
+    - "TODO: Add authentication"
+    - "We should use a proper database"
+    - "Maybe we need Redis"
+    
+validation:
+  max_lines_per_file: 200
+  max_dependencies: 5
+  max_complexity: 10
+
+actions:
+  on_violation:
+    - Show warning message
+    - Suggest simpler alternative
+    - Block commit if critical violation 
+
+references: "@Background.yaml:features.atomic_operations, @Background.yaml:dependencies.required, @Background.yaml:implementation_notes" 

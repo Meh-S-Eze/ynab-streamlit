@@ -1,0 +1,26 @@
+---
+description: "Enforce cursor-friendly code patterns"
+globs: "**/*.py"
+---
+
+name: ide_optimization
+type_hinting:
+  require: 
+    - return
+    - parameter
+  min_coverage: 85
+
+module_organization:
+  sections:
+    - Imports
+    - Constants
+    - Class Definitions
+    - CLI Handler
+    - Streamlit UI
+
+validation:
+  pattern: "(Any|object)"
+  action: warn
+  message: "Prefer concrete types over generic annotations"
+
+references: "@000-simplicity-enforcer.validation.max_lines_per_file" 
