@@ -1,0 +1,21 @@
+---
+description: Restrict GitHub Marketplace integrations to approved list
+globs: **/.github/workflows/*.yml
+---
+name: approved_ai_tools
+description: Restrict GitHub Marketplace integrations to approved list
+globs: "**/.github/workflows/*.yml"
+
+allowed_tools:
+  - Codacy Analysis CLI
+  - Streamlit App Action
+
+validation:
+  pattern: "uses: (?!codacy/|streamlit/)"
+  action: reject
+  message: "Only approved marketplace actions permitted"
+
+examples:
+  valid:
+    - "uses: codacy/codacy-analysis-cli-action@master"
+    - "uses: streamlit/streamlit-app-action@master" 

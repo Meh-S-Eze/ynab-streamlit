@@ -1,0 +1,24 @@
+---
+description: "Interface rules following @000-simplicity-enforcer.forbidden_patterns.web_frameworks"
+globs: "main.py, core.py"
+---
+
+name: interface_parity
+patterns:
+  shared_functions:
+    - Transaction pattern matching
+    - Budget math operations
+    - Response confidence scoring
+  forbidden:
+    pattern: "st\\.*\\(.*=.*\\)"
+    message: "Streamlit parameters must match CLI argument structure"
+
+validation:
+  cli:
+    require: "argparse.ArgumentParser"
+    block: "st.*"
+  streamlit:
+    require: "if __name__ == \"__main__\""
+    block: "argparse"
+
+references: "@000-simplicity-enforcer.forbidden_patterns.web_frameworks" 

@@ -1,0 +1,19 @@
+---
+description: "Validation within @000-simplicity-enforcer.validation.max_complexity limits"
+globs: "core.py, main.py"
+---
+
+name: validation_checks
+validation_steps:
+  - order: 1
+    method: validate_transaction
+    params: [amount, payee, date]
+  - order: 2
+    method: calculate_confidence
+    require: "status == 200"
+
+blocked_patterns:
+  - pattern: "try:.*except:.*pass"
+    message: "Validation failures must be explicitly handled"
+
+references: "@000-simplicity-enforcer.validation.max_complexity" 

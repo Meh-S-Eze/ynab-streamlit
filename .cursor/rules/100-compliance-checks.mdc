@@ -1,0 +1,21 @@
+---
+description: "Automated protocol adherence verification"
+globs: "**/*.py, **/*.txt, **/*.env"
+---
+
+name: protocol_compliance
+checks:
+  daily:
+    - Verify no database references
+    - Confirm UI exclusion
+    - Validate marketplace integrations
+  on_commit:
+    - Type hint coverage audit
+    - Atomic file operation check
+
+actions:
+  non_compliance:
+    revert: true
+    alert: "Build failed: Protocol violation"
+
+references: "@000-simplicity-enforcer.forbidden_patterns, @000-simplicity-enforcer.required_patterns" 

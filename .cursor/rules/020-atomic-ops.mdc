@@ -1,0 +1,25 @@
+---
+description: "File operations following @000-simplicity-enforcer.forbidden_patterns.database"
+globs: "**/*.txt, **/*.env"
+---
+
+name: atomic_files
+allowed_extensions:
+  - .env
+  - .txt
+  - .py
+
+validation:
+  pattern: "(json|yaml|db|sql)"
+  action: reject
+  message: "Block non-protocol file formats"
+
+examples:
+  valid:
+    - "with open('.env', 'a') as f"
+    - "Path('transactions.txt').exists()"
+  invalid:
+    - "config = yaml.load(...)"
+    - "conn = sqlite3.connect(...)"
+
+references: "@000-simplicity-enforcer.forbidden_patterns.database, @000-simplicity-enforcer.required_patterns.file_operations" 

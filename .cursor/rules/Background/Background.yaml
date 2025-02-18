@@ -1,0 +1,162 @@
+name: YNAB CLI Core with Streamlit Mirror
+github_actions: false
+
+core_implementation:
+  file: core.py
+  description: Shared business logic and YNAB API integration
+  components:
+    - YNABClient class
+    - API integration
+    - Transaction validation
+    - Pattern matching
+    - Confidence scoring
+
+interface:
+  file: main.py
+  description: Dual CLI/Streamlit entry point
+  modes:
+    - CLI handler
+    - Streamlit web interface
+
+configuration:
+  env_file: .env
+  required_variables:
+    - YNAB_ACCESS_TOKEN
+    - YNAB_BUDGET_ID
+
+validation:
+  confidence_scoring:
+    successful_api: 100%
+    insufficient_funds: 50%
+    validation_failure: 0%
+
+features:
+  - Natural language command processing
+  - Direct YNAB API integration
+  - Dual interface (CLI and web)
+  - Transaction validation
+  - Atomic file operations
+
+dependencies:
+  required:
+    - requests
+    - streamlit
+    - python-dotenv
+
+implementation_notes:
+  - Core logic under 200 lines
+  - Pure Python text processing
+  - No external dependencies beyond YNAB API
+  - Atomic file operations
+
+```python
+# core.py - Shared business logic and YNAB API integration
+import os
+import re
+from datetime import datetime
+from typing import Dict, List, Tuple
+import requests
+import streamlit as st
+
+class YNABClient:
+    BASE_URL = "https://api.youneedabudget.com/v1"
+    
+    def __init__(self):
+        self.token = os.getenv("YNAB_ACCESS_TOKEN")
+        self.budget_id = os.getenv("YNAB_BUDGET_ID") or "last-used"
+        self.headers = {"Authorization": f"Bearer {self.token}"}
+
+    def _api_call(self, method: str, endpoint: str, data: Dict = None) -> Tuple[float, Dict]:
+        url = f"{self.BASE_URL}/budgets/{self.budget_id}/{endpoint}"
+        response = requests.request(method, url, json=data, headers=self.headers)
+        return response.status_code, response.json()
+
+    def validate_transaction(self, amount: str, payee: str, date: str) -> Tuple[bool, float]:
+        try:
+            valid_date = datetime.strptime(date, "%Y-%m-%d").date()
+            numeric_amount = float(amount) * 1000  # Convert to milliunits
+            return True, numeric_amount
+        except (ValueError, TypeError):
+            return False, 0.0
+
+    def add_transaction(self, account_id: str, amount: float, payee: str, date: str) -> Dict:
+        endpoint = f"accounts/{account_id}/transactions"
+        payload = {
+            "transaction": {
+                "amount": int(amount),
+                "payee_name": payee,
+                "date": date,
+                "cleared": "uncleared"
+            }
+        }
+        status, response = self._api_call("POST", endpoint, payload)
+        return {"status": status, "data": response}
+
+    def match_pattern(self, command: str) -> Dict:
+        patterns = {
+            r"add (\d+) (.*) to (\d{4}-\d{2}-\d{2})": "add_transaction",
+            r"get (accounts|transactions)": "get_data"
+        }
+        for pattern, action in patterns.items():
+            if match := re.match(pattern, command):
+                return {"action": action, "groups": match.groups()}
+        return {"action": "unknown", "groups": []}
+
+    def calculate_confidence(self, result: Dict) -> float:
+        if result.get("status") == 200:
+            return 1.0
+        return 0.5 if result.get("data", {}).get("error", {}).get("name") == "insufficient_funds" else 0.0
+```
+
+```python
+# main.py - Dual CLI/Streamlit entry point
+import argparse
+import sys
+from core import YNABClient
+
+def cli_handler():
+    parser = argparse.ArgumentParser(description="YNAB CLI Core")
+    parser.add_argument("command", nargs="+", help="Natural language command")
+    args = parser.parse_args()
+    
+    client = YNABClient()
+    processed = client.match_pattern(" ".join(args.command))
+    
+    if processed["action"] == "add_transaction":
+        amount, payee, date = processed["groups"]
+        valid, numeric_amount = client.validate_transaction(amount, payee, date)
+        if valid:
+            result = client.add_transaction("last-used", numeric_amount, payee, date)
+            confidence = client.calculate_confidence(result)
+            print(f"Success: {confidence:.0%} confidence")
+        else:
+            print("Validation failed")
+
+if __name__ == "__main__":
+    if "streamlit" in sys.modules:
+        # Streamlit UI Implementation
+        client = YNABClient()
+        
+        st.title("YNAB Core Mirror")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            command = st.text_input("Enter command:")
+            if st.button("Execute"):
+                processed = client.match_pattern(command)
+                st.session_state.last_action = processed
+                
+        with col2:
+            if "last_action" in st.session_state:
+                action = st.session_state.last_action["action"]
+                if action == "add_transaction":
+                    amount, payee, date = st.session_state.last_action["groups"]
+                    valid, numeric_amount = client.validate_transaction(amount, payee, date)
+                    if valid:
+                        result = client.add_transaction("last-used", numeric_amount, payee, date)
+                        confidence = client.calculate_confidence(result)
+                        st.success(f"Operation confidence: {confidence:.0%}")
+    else:
+        # CLI Execution
+        cli_handler()
+```

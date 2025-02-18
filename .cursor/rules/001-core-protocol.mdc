@@ -1,0 +1,36 @@
+---
+description: "Core protocol following @000-simplicity-enforcer.forbidden_patterns.authentication"
+globs: "*.py"
+---
+
+name: ynab_core_protocol
+requirements:
+  enabled:
+    - file_operations
+    - content_validation
+    - confidence_validation
+    - github_marketplace_ai
+  disabled:
+    ui:
+      - react_components
+      - websockets
+      - custom_css
+      - session_management
+    database: all
+    security: all
+
+validation:
+  pattern: "(Session|OAuth|JWT)"
+  action: reject
+  message: "Security measures explicitly prohibited per protocol"
+
+examples:
+  allowed:
+    - "open('transactions.txt', 'w')"
+    - "st.text_input('Enter command:')"
+  blocked:
+    - "from flask import session"
+    - "import sqlite3"
+    - "ReactDOM.render()"
+
+references: "@000-simplicity-enforcer.forbidden_patterns.authentication" 
